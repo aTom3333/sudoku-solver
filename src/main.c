@@ -2,21 +2,76 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void display_matrix(unsigned char **p, int n) {
+void print_cover_matrix(unsigned char **p, int n) {
     int row_number = n * n * n;
     int col_number = n * n * 4;
-    printf("Matrice de %d lignes et %d colonnes :\n\t", row_number, col_number);
+    int i, j;
 
-    for (int i = 0; i < row_number; i++) {
-        printf("\n%.2d\t", i);
-        for (int j = 0; j < n * n * 4; j++)
-            if (p[i][j] != 1)
-                printf(".");
-            else {
-                printf("\033[0;32m");
-                printf("%u", p[i][j]);
-                printf("\033[0m");
-            }
+    printf("Matrice de %d lignes et %d colonnes :", row_number, col_number);
+    if (n <= 4) {
+        for (i = 0; i < row_number; i++) {
+            printf("\n%.2d\t", i);
+            for (j = 0; j < n * n * 4; j++)
+                if (p[i][j] != 1)
+                    printf(".");
+                else {
+                    printf("\033[0;32m");
+                    printf("%u", p[i][j]);
+                    printf("\033[0m");
+                }
+        }
+    } else {
+        printf("\nCELL CONSTRAINT  :\n");
+        for (i = 0; i < row_number; i++) {
+            printf("\n%.2d\t", i);
+            for (j = 0; j < n * n; j++)
+                if (p[i][j] != 1)
+                    printf(".");
+                else {
+                    printf("\033[0;32m");
+                    printf("%u", p[i][j]);
+                    printf("\033[0m");
+                }
+        }
+
+        printf("\nROW CONSTRAINT  :\n");
+        for (i = 0; i < row_number; i++) {
+            printf("\n%.2d\t", i);
+            for (j = n * n; j < n * n * 2; j++)
+                if (p[i][j] != 1)
+                    printf(".");
+                else {
+                    printf("\033[0;32m");
+                    printf("%u", p[i][j]);
+                    printf("\033[0m");
+                }
+        }
+
+        printf("\nCOL CONSTRAINT  :\n");
+        for (i = 0; i < row_number; i++) {
+            printf("\n%.2d\t", i);
+            for (j = n * n * 2; j < n * n * 3; j++)
+                if (p[i][j] != 1)
+                    printf(".");
+                else {
+                    printf("\033[0;32m");
+                    printf("%u", p[i][j]);
+                    printf("\033[0m");
+                }
+        }
+
+        printf("\nBOX CONSTRAINT  :\n");
+        for (i = 0; i < row_number; i++) {
+            printf("\n%.2d\t", i);
+            for (j = n * n * 3; j < n * n * 4; j++)
+                if (p[i][j] != 1)
+                    printf(".");
+                else {
+                    printf("\033[0;32m");
+                    printf("%u", p[i][j]);
+                    printf("\033[0m");
+                }
+        }
     }
 }
 
@@ -80,7 +135,25 @@ int main() {
 
     unsigned char **p;
     p = create_cover_matrix(n);
-    display_matrix(p, n);
+    print_cover_matrix(p, n);
+
+    /*for(i = 1; i <= 9; i++) {
+        for(j = 1; j <= 9; j++) {
+            int k = sudoku[i - 1][j - 1];
+            if (k != 0){ // zero out in the constraint board
+                for(int num = 1; num <= 9; num++) {
+                    if (num != k) {
+                        //printf("p[%d] = 0\n", (i - 1) * 3 * 3 + (j - 1) * 9 + (k - 1));
+
+                        for (int col = 0; col < (n * n * 4); col++)
+                            p[(i - 1) * 3 * 3 + (j - 1) * 9 + (k - 1)][col] = 0;
+                        //Arrays.fill(R[getIdx(i, j, num)], 0);
+                    }
+                }
+            }
+        }
+    }
+    print_cover_matrix(p, n);*/
 
     return 0;
 }
