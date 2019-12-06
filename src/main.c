@@ -2,6 +2,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+typedef int num;
+
+int takeSize(num n){
+	scanf("%d", &n);
+	n = n * n; //n => n²
+	return n;
+}
+
+void getSudoku(num n,  num grid[n][n]){
+	int i, j;
+	for(i = 0; i < n; i++){  //Read the numbers
+		for(j = 0; j < n; j++){
+			scanf("%d", &grid[i][j]);
+		}
+	}
+}
+
+
 void print_cover_matrix(unsigned char **p, int n) {
     int row_number = n * n * n;
     int col_number = n * n * 4;
@@ -132,10 +150,17 @@ unsigned char **create_cover_matrix(int n) {
 
 int main() {
     int n = 4;
-
+    //num n;    	
     unsigned char **p;
+    num grid[n][n];
+
+    //n = takeSize(n);
+    getSudoku(n, grid);
+
+
     p = create_cover_matrix(n);
     print_cover_matrix(p, n);
+   
 
     /*for(i = 1; i <= 9; i++) {
         for(j = 1; j <= 9; j++) {
