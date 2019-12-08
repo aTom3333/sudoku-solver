@@ -1,6 +1,9 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "list.h"
+#include "solver.h"
+
 
 typedef int num;
 
@@ -38,6 +41,7 @@ void print_cover_matrix(unsigned char **p, int n) {
                     printf("\033[0m");
                 }
         }
+        printf("\n");
     } else {
         printf("\nCELL CONSTRAINT  :\n");
         for (i = 0; i < row_number; i++) {
@@ -90,6 +94,7 @@ void print_cover_matrix(unsigned char **p, int n) {
                     printf("\033[0m");
                 }
         }
+        printf("\n");
     }
 }
 
@@ -148,6 +153,108 @@ unsigned char **create_cover_matrix(int n) {
     return p;
 }
 
+
+// TODO Temp
+int** emptySudoku(int n) {
+    int* data = calloc(sizeof(int), n*n);
+    int** mat = malloc(n * sizeof(int*));
+    int i;
+    for(i = 0; i < n; i++) {
+        mat[i] = data + i*n;
+    }
+    return mat;
+}
+
+void printSudoku(int n, int** s) {
+    int i,j;
+    for(i = 0; i < n; i++) {
+        for(j = 0; j < n; j++) {
+            printf("%d ", s[i][j]);
+        }
+        puts("");
+    }
+}
+
+HeaderNode* createDebugList() {
+    HeaderNode* headers[6];
+    int i =0;
+    for(i = 0; i < 3; i++) {
+        headers[i] = createHeaderNode();
+        setHeader(headers[i], headers[i]);
+        getData(headers[i])->constraintType = CELL;
+        getData(headers[i])->major = 0;
+        getData(headers[i])->minor = i;
+        if(i > 0) {
+            setLeft(headers[i], headers[i-1]);
+            setRight(headers[i-1], headers[i]);
+        }
+    }
+    for(i = 3; i < 6; i++) {
+        headers[i] = createHeaderNode();
+        setHeader(headers[i], headers[i]);
+        getData(headers[i])->constraintType = ROW;
+        getData(headers[i])->major = 0;
+        getData(headers[i])->minor = i;
+        setLeft(headers[i], headers[i-1]);
+        setRight(headers[i-1], headers[i]);
+    }
+    
+    Node* lastOfLine[9] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+    Node* lastOfCol[6] = {headers[0], headers[1], headers[2], headers[3], headers[4], headers[5]};
+    
+    int toCreate[][2] = {
+        {0, 0},
+        {0, 3},
+        {1, 0},
+        {1, 4},
+        {2, 0},
+        {2, 5},
+        {3, 1},
+        {3, 3},
+        {4, 1},
+        {4, 4},
+        {5, 1},
+        {5, 5},
+        {6, 2},
+        {6, 3},
+        {7, 2},
+        {7, 4},
+        {8, 2},
+        {8, 5},
+    };
+    for(i = 0; i < 18; i++) {
+        int row = toCreate[i][0];
+        int col = toCreate[i][1];
+        Node* n = createNode();
+        setHeader(n, headers[col]);
+        getData(headers[col])->numInCol++;
+        if(lastOfCol[col]) {
+            setUp(n, lastOfCol[col]);
+            setDown(lastOfCol[col], n);
+        }
+        if(lastOfLine[row]) {
+            setLeft(n, lastOfLine[row]);
+            setRight(n, lastOfLine[row]);
+            setRight(lastOfLine[row], n);
+            setLeft(lastOfLine[row], n);
+        }
+        lastOfCol[col] = n;
+        lastOfLine[row] = n;
+    }
+    for(i = 0; i < 6; i++) {
+        setUp(headers[i], lastOfCol[i]);
+        setDown(lastOfCol[i], headers[i]);
+    }
+    
+    HeaderNode* list = createHeaderNode();
+    setRight(list, headers[0]);
+    setLeft(headers[0], list);
+    setLeft(list, headers[5]);
+    setRight(headers[5], list);
+    
+    return list;
+}
+
 int main() {
     int n = 4;
     //num n;    	
@@ -159,9 +266,19 @@ int main() {
 
 
     p = create_cover_matrix(n);
-    print_cover_matrix(p, n);
-   
+    //print_cover_matrix(p, n);
+    
+    //puts("");
+    int** sudoku = emptySudoku(n);
+    //printSudoku(n, sudoku);
 
+    //puts("");
+    HeaderNode* list = createListFromMatrix(p, n);
+    //HeaderNode* list = createDebugList();
+    
+    solve(n, list, sudoku);
+    printSudoku(n, sudoku);
+    
     /*for(i = 1; i <= 9; i++) {
         for(j = 1; j <= 9; j++) {
             int k = sudoku[i - 1][j - 1];
@@ -179,6 +296,8 @@ int main() {
         }
     }
     print_cover_matrix(p, n);*/
+    
+    // TODO Free
 
     return 0;
 }

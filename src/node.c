@@ -60,9 +60,12 @@ inline void setDown(Node* n, Node* down)
     n->down = down;
 }
 
+int counter = 0;
+
 Node* createNode()
 {
-    return malloc(sizeof(Node));
+    counter++;
+    return calloc(1, sizeof(Node));
 }
 
 void freeNode(Node* n)
@@ -82,7 +85,7 @@ inline HeaderData* getData(HeaderNode* header)
 
 HeaderNode* createHeaderNode()
 {
-    return malloc(sizeof(HeaderNode));
+    return calloc(1, sizeof(HeaderNode));
 }
 
 void freeHeaderNode(HeaderNode* n)
