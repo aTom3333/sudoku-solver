@@ -2,15 +2,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include "bulk_allocator.h"
+#include <stdint.h>
 
 
 // For now links are implemented as pointer but they may be implemented as offset later
 struct Node {
-    struct HeaderNode* header;
-    struct Node* left;
-    struct Node* right;
-    struct Node* up;
-    struct Node* down;
+    int32_t header;
+    int32_t left;
+    int32_t right;
+    int32_t up;
+    int32_t down;
 };
 
 struct HeaderNode {
@@ -19,47 +20,47 @@ struct HeaderNode {
 };
 
 inline Node* getLeft(Node* n) {
-    return n->left;
+    return (Node*)((void*)n + n->left);
 }
 
 inline Node* getRight(Node* n)
 {
-    return n->right;
+    return (Node*)((void*)n + n->right);
 }
 
 inline Node* getUp(Node* n)
 {
-    return n->up;
+    return (Node*)((void*)n + n->up);
 }
 
 inline Node* getDown(Node* n)
 {
-    return n->down;
+    return (Node*)((void*)n + n->down);
 }
 
 inline HeaderNode* getHeader(Node* n)
 {
-    return n->header;
+    return (HeaderNode*)((void*)n + n->header);
 }
 
 inline void setLeft(Node* n, Node* left)
 {
-    n->left = left;
+    n->left = (void*)left - (void*)n;
 }
 
 inline void setRight(Node* n, Node* right)
 {
-    n->right = right;
+    n->right = (void*)right - (void*)n;
 }
 
 inline void setUp(Node* n, Node* up)
 {
-    n->up = up;
+    n->up = (void*)up - (void*)n;
 }
 
 inline void setDown(Node* n, Node* down)
 {
-    n->down = down;
+    n->down = (void*)down - (void*)n;
 }
 
 Node* createNode(memory_chunk* mc)
@@ -75,7 +76,7 @@ void freeNode(Node* n)
 
 inline void setHeader(Node* n, HeaderNode* header)
 {
-    n->header = header;
+    n->header = (void*) header - (void*)n;
 }
 
 inline HeaderData* getData(HeaderNode* header)
@@ -108,42 +109,42 @@ inline size_t sizeOfHeaderNode()
 
 inline int hasLeft(Node* n)
 {
-    return n->left != NULL;
+    return n->left != -1;
 }
 
 inline int hasRight(Node* n)
 {
-    return n->right != NULL;
+    return n->right != -1;
 }
 
 inline int hasUp(Node* n)
 {
-    return n->up != NULL;
+    return n->up != -1;
 }
 
 inline int hasDown(Node* n)
 {
-    return n->down != NULL;
+    return n->down != -1;
 }
 
 inline void markNoLeft(Node* n)
 {
-    n->left = NULL;
+    n->left = -1;
 }
 
 inline void markNoRight(Node* n)
 {
-    n->right = NULL;
+    n->right = -1;
 }
 
 inline void markNoUp(Node* n)
 {
-    n->up = NULL;
+    n->up = -1;
 }
 
 inline void markNoDown(Node* n)
 {
-    n->down = NULL;
+    n->down = -1;
 }
 
 
