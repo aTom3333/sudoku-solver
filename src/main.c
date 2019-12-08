@@ -196,6 +196,8 @@ int main() {
     //puts("");
     memory_chunk mc; // Only one memory_chunk for now
     HeaderNode* list = createListFromMatrix(p, n, &mc);
+    free(p[0]);
+    free(p);
     //HeaderNode* list = createDebugList();
     
     solve(n, list, sudoku);
