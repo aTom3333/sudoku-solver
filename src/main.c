@@ -154,6 +154,89 @@ unsigned char **create_cover_matrix(int n) {
     return p;
 }
 
+void ligne_colonnes(unsigned char ** p, num n, num mat[n][n]){
+    int compteur=0;
+    int i, j, k;
+     for(i = 0; i < n; i++){
+        for(j = 0; j < n; j++){
+            if(mat[i][j]!=0){ //Cases remplies
+                int start = compteur*n;
+                for(k = start; k < start + n; k++){
+                    if(p[k][compteur] == 1 && (k+1)%n != mat[i][j]){
+                        p[k][compteur] = 0;
+                    }
+                }
+                if(mat[i][j]==n){
+                    p[start+n-1][compteur] = 1;
+                }
+            }
+            if(mat[i][j]==0){  //Contraintes dûes aux lignes et aux colonnes
+                int a;
+                int start = compteur*n;
+                for(int k = start; k < start + n; k++){
+                    if(p[k][compteur] == 1){
+                        for(a = 0; a < n; a++){
+                            if(mat[i][a]==(k+1)%n && mat[i][a]!=0){
+                                p[k][compteur] = 0;
+                                break;
+                            }                           
+                        }
+                        for(a = 0; a < n; a++){
+                            if(mat[a][j]==(k+1)%n && mat[a][j]!=0){
+                                p[k][compteur] = 0;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            compteur++;
+        }
+    }
+}
+
+void ligne_nombre(unsigned char ** p, num n, num mat[n][n]){
+    int colonne = n*n;
+    int compteur = 0;
+    int i, j, k;
+    for(i = 0; i < n; i++){
+        for(j= 0; j<n; j++){
+            if(mat[i][j]!=0){
+                int start = compteur*n;
+                int c = colonne;
+                for(k = start; k < start + n;k++){
+                    if(p[k][c]==1 && (k+1)%n==mat[i][j]){
+                        p[k][c]=0;
+                    }
+                    c++;
+                }
+                if(mat[i][j]==n){
+                    p[start+n-1][c-1] = 0;
+                }
+            }
+            compteur++;
+        }
+        colonne+=n;
+    }
+}
+
+void fillInCover(unsigned char ** p, num n, num mat[n][n]){
+     
+
+    // Ligne-Colonne
+    ligne_colonnes(p, n, mat);
+
+    //ligne-Nombre
+    ligne_nombre(p,n,mat);
+
+    //colonne-Nombre
+
+    
+
+    //Boîte-Nombre
+
+}
+
 
 // TODO Temp
 int** emptySudoku(int n) {
