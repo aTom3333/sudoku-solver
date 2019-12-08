@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "list.h"
 #include "solver.h"
+#include "bulk_allocator.h"
 
 
 typedef int num;
@@ -175,94 +176,14 @@ void printSudoku(int n, int** s) {
     }
 }
 
-HeaderNode* createDebugList() {
-    HeaderNode* headers[6];
-    int i =0;
-    for(i = 0; i < 3; i++) {
-        headers[i] = createHeaderNode();
-        setHeader(headers[i], headers[i]);
-        getData(headers[i])->constraintType = CELL;
-        getData(headers[i])->major = 0;
-        getData(headers[i])->minor = i;
-        if(i > 0) {
-            setLeft(headers[i], headers[i-1]);
-            setRight(headers[i-1], headers[i]);
-        }
-    }
-    for(i = 3; i < 6; i++) {
-        headers[i] = createHeaderNode();
-        setHeader(headers[i], headers[i]);
-        getData(headers[i])->constraintType = ROW;
-        getData(headers[i])->major = 0;
-        getData(headers[i])->minor = i;
-        setLeft(headers[i], headers[i-1]);
-        setRight(headers[i-1], headers[i]);
-    }
-    
-    Node* lastOfLine[9] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
-    Node* lastOfCol[6] = {headers[0], headers[1], headers[2], headers[3], headers[4], headers[5]};
-    
-    int toCreate[][2] = {
-        {0, 0},
-        {0, 3},
-        {1, 0},
-        {1, 4},
-        {2, 0},
-        {2, 5},
-        {3, 1},
-        {3, 3},
-        {4, 1},
-        {4, 4},
-        {5, 1},
-        {5, 5},
-        {6, 2},
-        {6, 3},
-        {7, 2},
-        {7, 4},
-        {8, 2},
-        {8, 5},
-    };
-    for(i = 0; i < 18; i++) {
-        int row = toCreate[i][0];
-        int col = toCreate[i][1];
-        Node* n = createNode();
-        setHeader(n, headers[col]);
-        getData(headers[col])->numInCol++;
-        if(lastOfCol[col]) {
-            setUp(n, lastOfCol[col]);
-            setDown(lastOfCol[col], n);
-        }
-        if(lastOfLine[row]) {
-            setLeft(n, lastOfLine[row]);
-            setRight(n, lastOfLine[row]);
-            setRight(lastOfLine[row], n);
-            setLeft(lastOfLine[row], n);
-        }
-        lastOfCol[col] = n;
-        lastOfLine[row] = n;
-    }
-    for(i = 0; i < 6; i++) {
-        setUp(headers[i], lastOfCol[i]);
-        setDown(lastOfCol[i], headers[i]);
-    }
-    
-    HeaderNode* list = createHeaderNode();
-    setRight(list, headers[0]);
-    setLeft(headers[0], list);
-    setLeft(list, headers[5]);
-    setRight(headers[5], list);
-    
-    return list;
-}
-
 int main() {
-    int n = 4;
+    int n = 36;
     //num n;    	
     unsigned char **p;
     num grid[n][n];
 
     //n = takeSize(n);
-    getSudoku(n, grid);
+    //getSudoku(n, grid);
 
 
     p = create_cover_matrix(n);
@@ -273,7 +194,8 @@ int main() {
     //printSudoku(n, sudoku);
 
     //puts("");
-    HeaderNode* list = createListFromMatrix(p, n);
+    memory_chunk mc; // Only one memory_chunk for now
+    HeaderNode* list = createListFromMatrix(p, n, &mc);
     //HeaderNode* list = createDebugList();
     
     solve(n, list, sudoku);

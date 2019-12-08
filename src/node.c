@@ -1,5 +1,7 @@
 #include "node.h"
 #include <stdlib.h>
+#include <string.h>
+#include "bulk_allocator.h"
 
 
 // For now links are implemented as pointer but they may be implemented as offset later
@@ -60,17 +62,15 @@ inline void setDown(Node* n, Node* down)
     n->down = down;
 }
 
-int counter = 0;
-
-Node* createNode()
+Node* createNode(memory_chunk* mc)
 {
-    counter++;
-    return calloc(1, sizeof(Node));
+    Node* node = allocate(mc, sizeOfNode());
+    memset(node, 0, sizeOfNode());
+    return node;
 }
 
 void freeNode(Node* n)
 {
-    free(n);
 }
 
 inline void setHeader(Node* n, HeaderNode* header)
@@ -83,14 +83,27 @@ inline HeaderData* getData(HeaderNode* header)
     return &header->data;
 }
 
-HeaderNode* createHeaderNode()
+HeaderNode* createHeaderNode(memory_chunk* mc)
 {
-    return calloc(1, sizeof(HeaderNode));
+    HeaderNode* node = allocate(mc, sizeOfHeaderNode());
+    memset(node, 0, sizeOfHeaderNode());
+    return node;
 }
 
 void freeHeaderNode(HeaderNode* n)
 {
-    free(n);
+}
+
+// As the structure of Node is not public, we provide a function to get its size for allocation purpose
+size_t sizeOfNode()
+{
+    return sizeof(Node);
+}
+
+// Same
+size_t sizeOfHeaderNode()
+{
+    return sizeof(HeaderNode);
 }
 
 

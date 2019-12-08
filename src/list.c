@@ -1,6 +1,7 @@
 #include "list.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include "bulk_allocator.h"
 
 
 void hideLine(Node* n)
@@ -17,9 +18,15 @@ void hideLine(Node* n)
     } while(n != initial);
 }
 
-HeaderNode* createListFromMatrix(unsigned char** mat, unsigned int n)
+HeaderNode* createListFromMatrix(unsigned char** mat, unsigned int n, memory_chunk* mc)
 {
-    HeaderNode* first = createHeaderNode();
+    // We will allocate one HeaderNode to represent the root, n*n*4 HeaderNode for every column
+    // and as many Node as they are 1s in the matrix. There is n*n*n row in the matrix and 
+    // each row can have a maximum of 4 1s, so the number of Node is smaller than n*n*n*4
+    size_t allocSize = sizeOfHeaderNode() + n*n*4*sizeOfHeaderNode() + n*n*n*4*sizeOfNode();
+    init_memory_chunk(mc, allocSize);
+    
+    HeaderNode* first = createHeaderNode(mc);
     int col, row, value;
     
     // Create the headers
@@ -27,7 +34,7 @@ HeaderNode* createListFromMatrix(unsigned char** mat, unsigned int n)
     for(row = 0; row < n; row++) {
         for(col = 0; col < n; col++) {
             // Cell constraint
-            setRight((Node*) header, (Node*) createHeaderNode());
+            setRight((Node*) header, (Node*) createHeaderNode(mc));
             setLeft(getRight((Node*) header), (Node*) header);
             header = (HeaderNode*) getRight((Node*) header);
             HeaderData* data = getData(header);
@@ -40,7 +47,7 @@ HeaderNode* createListFromMatrix(unsigned char** mat, unsigned int n)
     for(row = 0; row < n; row++) {
         for(value = 0; value < n; value++) {
             // Row constraint
-            setRight((Node*) header, (Node*) createHeaderNode());
+            setRight((Node*) header, (Node*) createHeaderNode(mc));
             setLeft(getRight((Node*) header), (Node*) header);
             header = (HeaderNode*) getRight((Node*) header);
             HeaderData* data = getData(header);
@@ -53,7 +60,7 @@ HeaderNode* createListFromMatrix(unsigned char** mat, unsigned int n)
     for(col = 0; col < n; col++) {
         for(value = 0; value < n; value++) {
             // Column constraint
-            setRight((Node*) header, (Node*) createHeaderNode());
+            setRight((Node*) header, (Node*) createHeaderNode(mc));
             setLeft(getRight((Node*) header), (Node*) header);
             header = (HeaderNode*) getRight((Node*) header);
             HeaderData* data = getData(header);
@@ -66,7 +73,7 @@ HeaderNode* createListFromMatrix(unsigned char** mat, unsigned int n)
     for(row = 0; row < n; row++) {
         for(col = 0; col < n; col++) {
             // Box constraint
-            setRight((Node*) header, (Node*) createHeaderNode());
+            setRight((Node*) header, (Node*) createHeaderNode(mc));
             setLeft(getRight((Node*) header), (Node*) header);
             header = (HeaderNode*) getRight((Node*) header);
             HeaderData* data = getData(header);
@@ -91,7 +98,7 @@ HeaderNode* createListFromMatrix(unsigned char** mat, unsigned int n)
         for(col = 0; col < colNum; col++) {
             if(mat[row][col]) {
                 // Create Node
-                Node* node = createNode();
+                Node* node = createNode(mc);
                 setHeader(node, header);
                 getData(header)->numInCol++;
                 

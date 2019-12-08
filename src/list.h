@@ -3,8 +3,8 @@
 
 #include "node.h"
 
-
-HeaderNode* createListFromMatrix(unsigned char** mat, unsigned int n);
+struct memory_chunk;
+HeaderNode* createListFromMatrix(unsigned char** mat, unsigned int n, struct memory_chunk* mc);
 
 void hideLine(Node* n);
 void hideColumnAndLines(HeaderNode* header);

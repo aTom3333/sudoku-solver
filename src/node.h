@@ -1,6 +1,8 @@
 #ifndef NODE_H
 #define NODE_H
 
+#include <stddef.h>
+
 // Public interface because implementation is not required to store pointers
 
 typedef struct Node Node;
@@ -15,11 +17,11 @@ typedef struct HeaderData { // TODO Pack
     enum ConstraintType constraintType;
 } HeaderData;
 
-
-Node* createNode();
+struct memory_chunk; // forward declaration
+Node* createNode(struct memory_chunk* mc);
 void freeNode(Node* n);
 
-HeaderNode* createHeaderNode();
+HeaderNode* createHeaderNode(struct memory_chunk* mc);
 void freeHeaderNode(HeaderNode* n);
 
 inline Node* getLeft(Node* n);
@@ -36,5 +38,8 @@ inline HeaderNode* getHeader(Node* n);
 inline void setHeader(Node* n, HeaderNode* header);
 
 inline HeaderData* getData(HeaderNode* header);
+
+inline size_t sizeOfNode();
+inline size_t sizeOfHeaderNode();
 
 #endif // NODE_H
