@@ -177,7 +177,7 @@ void printSudoku(int n, int** s) {
 }
 
 int main() {
-    int n = 36;
+    int n = 49;
     //num n;    	
     unsigned char **p;
     num grid[n][n];
@@ -220,6 +220,7 @@ int main() {
     print_cover_matrix(p, n);*/
     
     // TODO Free
+    free_memory_chunk(&mc); // Free every node used during the algorithm
 
     return 0;
 }

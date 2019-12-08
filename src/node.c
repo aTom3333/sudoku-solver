@@ -83,27 +83,67 @@ inline HeaderData* getData(HeaderNode* header)
     return &header->data;
 }
 
-HeaderNode* createHeaderNode(memory_chunk* mc)
+inline HeaderNode* createHeaderNode(memory_chunk* mc)
 {
     HeaderNode* node = allocate(mc, sizeOfHeaderNode());
     memset(node, 0, sizeOfHeaderNode());
     return node;
 }
 
-void freeHeaderNode(HeaderNode* n)
+inline void freeHeaderNode(HeaderNode* n)
 {
 }
 
 // As the structure of Node is not public, we provide a function to get its size for allocation purpose
-size_t sizeOfNode()
+inline size_t sizeOfNode()
 {
     return sizeof(Node);
 }
 
 // Same
-size_t sizeOfHeaderNode()
+inline size_t sizeOfHeaderNode()
 {
     return sizeof(HeaderNode);
+}
+
+inline int hasLeft(Node* n)
+{
+    return n->left != NULL;
+}
+
+inline int hasRight(Node* n)
+{
+    return n->right != NULL;
+}
+
+inline int hasUp(Node* n)
+{
+    return n->up != NULL;
+}
+
+inline int hasDown(Node* n)
+{
+    return n->down != NULL;
+}
+
+inline void markNoLeft(Node* n)
+{
+    n->left = NULL;
+}
+
+inline void markNoRight(Node* n)
+{
+    n->right = NULL;
+}
+
+inline void markNoUp(Node* n)
+{
+    n->up = NULL;
+}
+
+inline void markNoDown(Node* n)
+{
+    n->down = NULL;
 }
 
 

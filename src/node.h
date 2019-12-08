@@ -34,6 +34,16 @@ inline void setRight(Node* n, Node* right);
 inline void setUp(Node* n, Node* up);
 inline void setDown(Node* n, Node* down);
 
+inline int hasLeft(Node* n);
+inline int hasRight(Node* n);
+inline int hasUp(Node* n);
+inline int hasDown(Node* n);
+
+inline void markNoLeft(Node* n);
+inline void markNoRight(Node* n);
+inline void markNoUp(Node* n);
+inline void markNoDown(Node* n);
+
 inline HeaderNode* getHeader(Node* n);
 inline void setHeader(Node* n, HeaderNode* header);
 

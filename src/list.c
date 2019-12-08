@@ -37,6 +37,7 @@ HeaderNode* createListFromMatrix(unsigned char** mat, unsigned int n, memory_chu
             setRight((Node*) header, (Node*) createHeaderNode(mc));
             setLeft(getRight((Node*) header), (Node*) header);
             header = (HeaderNode*) getRight((Node*) header);
+            markNoDown((Node*) header);
             HeaderData* data = getData(header);
             data->constraintType = CELL;
             data->major = row;
@@ -50,6 +51,7 @@ HeaderNode* createListFromMatrix(unsigned char** mat, unsigned int n, memory_chu
             setRight((Node*) header, (Node*) createHeaderNode(mc));
             setLeft(getRight((Node*) header), (Node*) header);
             header = (HeaderNode*) getRight((Node*) header);
+            markNoDown((Node*) header);
             HeaderData* data = getData(header);
             data->constraintType = ROW;
             data->major = row;
@@ -63,6 +65,7 @@ HeaderNode* createListFromMatrix(unsigned char** mat, unsigned int n, memory_chu
             setRight((Node*) header, (Node*) createHeaderNode(mc));
             setLeft(getRight((Node*) header), (Node*) header);
             header = (HeaderNode*) getRight((Node*) header);
+            markNoDown((Node*) header);
             HeaderData* data = getData(header);
             data->constraintType = COLUMN;
             data->major = col;
@@ -75,7 +78,9 @@ HeaderNode* createListFromMatrix(unsigned char** mat, unsigned int n, memory_chu
             // Box constraint
             setRight((Node*) header, (Node*) createHeaderNode(mc));
             setLeft(getRight((Node*) header), (Node*) header);
+            markNoDown((Node*) header);
             header = (HeaderNode*) getRight((Node*) header);
+            markNoDown((Node*) header);
             HeaderData* data = getData(header);
             data->constraintType = BOX;
             data->major = row;
@@ -106,11 +111,12 @@ HeaderNode* createListFromMatrix(unsigned char** mat, unsigned int n, memory_chu
                     firstInRow = node;
                 
                 Node* lastInColumn = (Node*) header;
-                while(getDown(lastInColumn)) // TODO Replace by hasDown
+                while(hasDown(lastInColumn))
                     lastInColumn = getDown(lastInColumn);
                 
                 setDown(lastInColumn, node);
                 setUp(node, lastInColumn);
+                markNoDown(node);
                 if(lastInRow)
                 {
                     setRight(lastInRow, node);
@@ -132,7 +138,7 @@ HeaderNode* createListFromMatrix(unsigned char** mat, unsigned int n, memory_chu
     header = (HeaderNode*) getRight((Node*) first); // Get first real header
     for(col = 0; col < colNum; col++) {
         Node* lastInColumn = (Node*) header;
-        while(getDown(lastInColumn))
+        while(hasDown(lastInColumn))
             lastInColumn = getDown(lastInColumn);
         
         setDown(lastInColumn, (Node*) header);

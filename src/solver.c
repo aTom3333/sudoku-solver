@@ -37,19 +37,19 @@ int solve(int n, HeaderNode* list, int** res)
 }
 
 int countColumn(HeaderNode* list) {
-    HeaderNode* header = getRight(list);
+    HeaderNode* header = (HeaderNode*) getRight((Node*) list);
     int c = 0;
     while(header != list) {
         c++;
-        header = getRight(header);
+        header = (HeaderNode*) getRight((Node*) header);
     }
     return c;
 }
 
 int countRowGoingDown(HeaderNode* header) {
-    Node* node = getDown(header);
+    Node* node = getDown((Node*) header);
     int c = 0;
-    while(node != header) {
+    while(node != (Node*) header) {
         c++;
         node = getDown(node);
     }
@@ -57,9 +57,9 @@ int countRowGoingDown(HeaderNode* header) {
 }
 
 int countRowGoingUp(HeaderNode* header) {
-    Node* node = getUp(header);
+    Node* node = getUp((Node*) header);
     int c = 0;
-    while(node != header) {
+    while(node != (Node*) header) {
         c++;
         node = getUp(node);
     }
@@ -67,7 +67,7 @@ int countRowGoingUp(HeaderNode* header) {
 }
 
 void checkList(HeaderNode* list) {
-    HeaderNode* header = getRight(list);
+    HeaderNode* header = (HeaderNode*) getRight((Node*) list);
     while(header != list) {
         int c1 = getData(header)->numInCol;
         int c2 = countRowGoingDown(header);
@@ -76,7 +76,7 @@ void checkList(HeaderNode* list) {
             fprintf(stderr, "problème\n");
         }
         
-        header = getRight(header);
+        header = (HeaderNode*) getRight((Node*) header);
     }
 }
 
