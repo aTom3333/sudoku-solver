@@ -63,8 +63,10 @@ inline void setDown(Node* n, Node* down)
     n->down = (void*)down - (void*)n;
 }
 
+int counter = 0;
 Node* createNode(memory_chunk* mc)
 {
+    counter++;
     Node* node = allocate(mc, sizeOfNode());
     memset(node, 0, sizeOfNode());
     return node;

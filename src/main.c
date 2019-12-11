@@ -8,17 +8,19 @@
 
 typedef int num;
 
-int takeSize(num n){
+int takeSize(){
+    int n;
 	scanf("%d", &n);
-	n = n * n; //n => n²
 	return n;
 }
 
-void getSudoku(num n,  num grid[n][n]){
+void getSudoku(int n,  num** grid){
 	int i, j;
 	for(i = 0; i < n; i++){  //Read the numbers
 		for(j = 0; j < n; j++){
-			scanf("%d", &grid[i][j]);
+		    int var;
+			scanf("%d", &var);
+			grid[i][j] = var;
 		}
 	}
 }
@@ -173,7 +175,8 @@ void ligne_colonnes(unsigned char ** p, num n, num mat[n][n]){
             if(mat[i][j]==0){  //Contraintes dûes aux lignes et aux colonnes
                 int a;
                 int start = compteur*n;
-                for(int k = start; k < start + n; k++){
+                int k;
+                for(k = start; k < start + n; k++){
                     if(p[k][compteur] == 1){
                         for(a = 0; a < n; a++){
                             if(mat[i][a]==(k+1)%n && mat[i][a]!=0){
@@ -249,38 +252,46 @@ int** emptySudoku(int n) {
     return mat;
 }
 
-void printSudoku(int n, int** s) {
+void printSudoku(int n, num** s) {
     int i,j;
     for(i = 0; i < n; i++) {
         for(j = 0; j < n; j++) {
-            printf("%d ", s[i][j]);
+            printf("%d ", (int)s[i][j]);
         }
         puts("");
     }
 }
 
 int main() {
-    int n = 49;
+    //int n = 25;
     //num n;    	
-    unsigned char **p;
-    num grid[n][n];
 
-    //n = takeSize(n);
-    //getSudoku(n, grid);
+    int n_sqrt = takeSize();
+    if(n_sqrt > 100) {
+        fprintf(stderr, "sûrement pas volontaire\n");
+        exit(1);
+    }
+    int n = n_sqrt * n_sqrt;
+    num* sudoku_data = malloc(n*n* sizeof(num));
+    num** sudoku = malloc(n*sizeof(num*));
+    int i;
+    for(i = 0; i < n; i++)
+        sudoku[i] = sudoku_data + i*n;
+    getSudoku(n, sudoku);
 
 
-    p = create_cover_matrix(n);
+    //unsigned char** p = create_cover_matrix(n);
     //print_cover_matrix(p, n);
     
     //puts("");
-    int** sudoku = emptySudoku(n);
-    //printSudoku(n, sudoku);
+    printSudoku(n, sudoku);
 
     //puts("");
     memory_chunk mc; // Only one memory_chunk for now
-    HeaderNode* list = createListFromMatrix(p, n, &mc);
-    free(p[0]);
-    free(p);
+    //HeaderNode* list = createListFromMatrix(p, n, &mc);
+    HeaderNode* list = createListFromSudoku(sudoku, n_sqrt, &mc);
+    //free(p[0]);
+    //free(p);
     //HeaderNode* list = createDebugList();
     
     solve(n, list, sudoku);
@@ -306,6 +317,8 @@ int main() {
     
     // TODO Free
     free_memory_chunk(&mc); // Free every node used during the algorithm
+    free(sudoku);
+    free(sudoku_data);
 
     return 0;
 }

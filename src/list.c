@@ -229,3 +229,256 @@ void unchooseLine(Node* n)
         n = getLeft(n);
     } while(n != initial);
 }
+
+
+static int countRowGoingDown(HeaderNode* header) {
+    Node* node = getDown((Node*) header);
+    int c = 0;
+    while(node != (Node*) header) {
+        c++;
+        node = getDown(node);
+    }
+    return c;
+}
+
+static int countRowGoingUp(HeaderNode* header) {
+    Node* node = getUp((Node*) header);
+    int c = 0;
+    while(node != (Node*) header) {
+        c++;
+        node = getUp(node);
+    }
+    return c;
+}
+
+static void checkList(HeaderNode* list) {
+    HeaderNode* header = (HeaderNode*) getRight((Node*) list);
+    while(header != list) {
+        int c1 = getData(header)->numInCol;
+        int c2 = countRowGoingDown(header);
+        int c3 = countRowGoingUp(header);
+        if(c1 != c2 || c2 != c3) {
+            fprintf(stderr, "problème\n");
+        }
+
+        header = (HeaderNode*) getRight((Node*) header);
+    }
+}
+
+HeaderNode* createListFromSudoku(int** sudoku, unsigned int n_sqrt, struct memory_chunk* mc)
+{
+    unsigned int n = n_sqrt*n_sqrt;
+    
+    // We will allocate one HeaderNode to represent the root, n*n*4 HeaderNode for every column
+    // and as many Node as they are 1s in the matrix. There is n*n*n row in the matrix and 
+    // each row can have a maximum of 4 1s, so the number of Node is smaller than n*n*n*4
+    size_t allocSize = sizeOfHeaderNode() + n*n*4*sizeOfHeaderNode() + n*n*n*4*sizeOfNode();
+    init_memory_chunk(mc, allocSize);
+
+    HeaderNode* first = createHeaderNode(mc);
+    int col, row, value;
+    
+    HeaderNode** headers = malloc(n*n*4* sizeof(HeaderNode*));
+    int headerCount = 0;
+
+    // Create the headers
+    HeaderNode* header = first;
+    for(row = 0; row < n; row++) {
+        for(col = 0; col < n; col++) {
+            // Cell constraint
+            HeaderNode* headerNode = createHeaderNode(mc);
+            headers[headerCount++] = headerNode;
+            setRight((Node*) header, (Node*) headerNode);
+            setLeft(getRight((Node*) header), (Node*) header);
+            header = (HeaderNode*) getRight((Node*) header);
+            HeaderData* data = getData(header);
+            data->constraintType = CELL;
+            data->major = row;
+            data->minor = col;
+            data->isKnown = 0;
+            setHeader((Node*) header, header);
+        }
+    }
+    for(row = 0; row < n; row++) {
+        for(value = 0; value < n; value++) {
+            // Row constraint
+            HeaderNode* headerNode = createHeaderNode(mc);
+            headers[headerCount++] = headerNode;
+            setRight((Node*) header, (Node*) headerNode);
+            setLeft(getRight((Node*) header), (Node*) header);
+            header = (HeaderNode*) getRight((Node*) header);
+            HeaderData* data = getData(header);
+            data->constraintType = ROW;
+            data->major = row;
+            data->minor = value+1;
+            data->isKnown = 0;
+            setHeader((Node*) header, header);
+        }
+    }
+    for(col = 0; col < n; col++) {
+        for(value = 0; value < n; value++) {
+            // Column constraint
+            HeaderNode* headerNode = createHeaderNode(mc);
+            headers[headerCount++] = headerNode;
+            setRight((Node*) header, (Node*) headerNode);
+            setLeft(getRight((Node*) header), (Node*) header);
+            header = (HeaderNode*) getRight((Node*) header);
+            HeaderData* data = getData(header);
+            data->constraintType = COLUMN;
+            data->major = col;
+            data->minor = value+1;
+            data->isKnown = 0;
+            setHeader((Node*) header, header);
+        }
+    }
+    for(row = 0; row < n; row++) {
+        for(col = 0; col < n; col++) {
+            // Box constraint
+            HeaderNode* headerNode = createHeaderNode(mc);
+            headers[headerCount++] = headerNode;
+            setRight((Node*) header, (Node*) headerNode);
+            setLeft(getRight((Node*) header), (Node*) header);
+            header = (HeaderNode*) getRight((Node*) header);
+            HeaderData* data = getData(header);
+            data->constraintType = BOX;
+            data->major = row;
+            data->minor = col;
+            data->isKnown = 0;
+            setHeader((Node*) header, header);
+        }
+    }
+    // Circular
+    setRight((Node*) header, (Node*) first);
+    setLeft((Node*) first, (Node*) header);
+
+
+    int rowNum = n*n*n;
+    int colNum = 4*n*n;
+    int n_sq = n*n;
+    
+    int box_row, row_in_box, box_col, col_in_box;
+    for(box_row = 0; box_row < n_sqrt; box_row++) {
+        for(row_in_box = 0; row_in_box < n_sqrt; row_in_box++) {
+            row = box_row*n_sqrt + row_in_box;
+            for(box_col = 0; box_col < n_sqrt; box_col++) {
+                int box_no = box_row*n_sqrt + box_col;
+                for(col_in_box = 0; col_in_box < n_sqrt; col_in_box++) {
+                    col = box_col*n_sqrt + col_in_box;
+                    if(sudoku[row][col]) {
+                        // Value given, add the row and then remove it with the right columns
+                        value = sudoku[row][col];
+                        int usedHeaders[4] = {
+                            row*n + col, // Row-Column constraint
+                            row*n + value-1 + n_sq, // Row-Value constraint
+                            col*n + value-1 + 2*n_sq, // Column-Value constraint
+                            box_no*n + value-1 + 3*n_sq // Box-Value constraint
+                        };
+                        int i;
+                        Node* firstNode = NULL;
+                        Node* lastNode = NULL;
+                        for(i = 0; i < 4; i++) {
+                            HeaderNode* header = headers[usedHeaders[i]];
+
+                            Node* nodeToRemove = getDown((Node*) header);
+                            while(nodeToRemove != (Node*) header) {
+                                // Remove node from row and then hide remaining of row
+                                // Node is removed before because we don't want it to be removed from the current column in order to be restored later
+                                Node* nodeFromLine = getRight(nodeToRemove);
+                                if(nodeFromLine != nodeToRemove) {
+                                    setLeft(nodeFromLine, getLeft(nodeToRemove));
+                                    setRight(getLeft(nodeToRemove), nodeFromLine);
+                                    hideLine(nodeFromLine);
+                                }
+                                nodeToRemove = getDown(nodeToRemove);
+                            }
+                            
+                            Node* node = createNode(mc);
+                            setHeader(node, header);
+                            getData(header)->isKnown = 1;
+                            getData(header)->numInCol++;
+                            // Insert node in column
+                            if(hasUp((Node*) header))
+                            {
+                                setUp(node, getUp((Node*) header));
+                                setDown(node, (Node*) header);
+                            } else {
+                                setUp(node, (Node*) header);
+                                setDown(node, (Node*) header);
+                            }
+                            setUp((Node*) header, node);
+                            setDown(getUp(node), node);
+
+                            if(firstNode == NULL)
+                                firstNode = node;
+                            if(lastNode) {
+                                // Insert in row
+                                setRight(lastNode, node);
+                                setLeft(node, lastNode);
+                            }
+
+                            lastNode = node;
+                        }
+                        // Make row circular
+                        setLeft(firstNode, lastNode);
+                        setRight(lastNode, firstNode);
+                    } else {
+                        for(value = 1; value <= n; value++) {
+                            int usedHeaders[4] = {
+                                row*n + col, // Row-Column constraint
+                                row*n + value-1 + n_sq, // Row-Value constraint
+                                col*n + value-1 + 2*n_sq, // Column-Value constraint
+                                box_no*n + value-1 + 3*n_sq // Box-Value constraint
+                            };
+                            int i;
+                            int needLine = 1;
+                            for(i = 0; i < 4; i++) {
+                                if(getData(headers[i])->isKnown) {
+                                    needLine = 0;
+                                    break;
+                                }
+                            }
+                            if(needLine) {
+                                Node* firstNode = NULL;
+                                Node* lastNode = NULL;
+                                for(i = 0; i < 4; i++) {
+                                    Node* node = createNode(mc);
+                                    HeaderNode* header = headers[usedHeaders[i]];
+                                    setHeader(node, header);
+                                    getData(header)->numInCol++;
+                                    // Insert node in column
+                                    if(hasUp((Node*) header))
+                                    {
+                                        setUp(node, getUp((Node*) header));
+                                        setDown(node, (Node*) header);
+                                    } else {
+                                        setUp(node, (Node*) header);
+                                        setDown(node, (Node*) header);
+                                    }
+                                    setUp((Node*) header, node);
+                                    setDown(getUp(node), node);
+                                    
+                                    if(firstNode == NULL)
+                                        firstNode = node;
+                                    if(lastNode) {
+                                        // Insert in row
+                                        setRight(lastNode, node);
+                                        setLeft(node, lastNode);
+                                    }
+                                    
+                                    lastNode = node;
+                                }
+                                // Make row circular
+                                setLeft(firstNode, lastNode);
+                                setRight(lastNode, firstNode);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    free(headers);
+
+    return first;
+}
