@@ -8,31 +8,20 @@
 #include "list.h"
 
 
-int iteration(int k, HeaderNode* list, stack* st);
 HeaderNode* selectColumn(HeaderNode* list);
 int getInfoOfLine(Node* node, int* row, int* col, int* value);
 
 int solve(int n, HeaderNode* list, int** res)
 {
-    stack st = createStack(n*n);
-    
-    if(iteration(0, list, &st)) {
-        int i;
-        for(i = 0; i < st.size; i++) {
-            Node* line = st.data[i] + (void*)list;
-            int row, col, value;
-            if(getInfoOfLine(line, &row, &col, &value)) {
-                res[row][col] = value;
-            } else {
-                fprintf(stderr, "Impossible de récupérer les infos de la ligne\n");
-            }
-        }
-        
-        freeStack(&st);
+    stack* st = createStack(n*n);
+    followWhileNoChoice(list, st);
+    if(iteration(list, st)) {
+        getGridFromStack(n, res, list, st);
+        freeStack(st);
         return 1;
     }
     
-    freeStack(&st);
+    freeStack(st);
     return 0;
 }
 
@@ -80,7 +69,7 @@ void checkList(HeaderNode* list) {
     }
 }
 
-int iteration(int k, HeaderNode* list, stack* st)
+int iteration(HeaderNode* list, stack* st)
 {
     //checkList(list);
     if(getRight((Node*) list) == (Node*) list) {
@@ -94,7 +83,7 @@ int iteration(int k, HeaderNode* list, stack* st)
     while(node != (Node*) column && !found) {
         push(st, node, list);
         chooseLine(node);
-        found = iteration(k+1, list, st);
+        found = iteration(list, st);
         unchooseLine(node);
         
         if(!found)
@@ -147,4 +136,96 @@ int getInfoOfLine(Node* node, int* row, int* col, int* value)
     } while((initial != node) && (!hasRow || !hasCol || !hasValue));
     
     return hasRow && hasCol && hasValue;
+}
+
+
+
+void followStack(HeaderNode* list, stack* st)
+{
+    size_t size = getSize(st);
+    int i;
+    for(i = 0; i < size; i++) {
+        Node* line = getAt(st, i, list);
+        chooseLine(line);
+    }
+}
+
+void revertStack(HeaderNode* list, stack* st)
+{
+    size_t size = getSize(st);
+    int i;
+    for(i = size-1; i >= 0; i--) {
+        Node* line = getAt(st, i, list);
+        unchooseLine(line);
+    }
+}
+
+void followWhileNoChoice(HeaderNode* list, stack* st)
+{
+    HeaderNode* column = selectColumn(list);
+    while(getData(column)->numInCol == 1) {
+        Node* node = getDown((Node*) column);
+        push(st, node, list);
+        chooseLine(node);
+        column = selectColumn(list);
+    } 
+}
+
+
+void widthExplorationIteration(int n, int depth, HeaderNode* list, dynarray* arr, stack* st) {
+    if(getRight((Node*) list) == (Node*) list) {
+        // No more column
+        append(arr, copyStack(st, n*n));
+        return;
+    }
+    HeaderNode* column = selectColumn(list);
+    Node* node = getDown((Node*) column);
+    while(node != (Node*) column) {
+        push(st, node, list);
+        if(depth > 1)
+        {
+            chooseLine(node);
+            widthExplorationIteration(n, depth-1, list, arr, st);
+            unchooseLine(node);
+        }
+        else
+        {
+            append(arr, copyStack(st, n*n));    
+        }
+        pop(st, list);
+
+        node = getDown(node);
+    }
+}
+
+
+dynarray* widthExploration(int n, int depth, HeaderNode* list)
+{
+    dynarray* arr = createDynArray(10, freeStack);
+    stack* st = createStack(n*n);
+    widthExplorationIteration(n, depth, list, arr, st);
+    freeStack(st);
+    return arr;
+}
+
+int solveSubBranch(int n, HeaderNode* list, stack* st)
+{
+    followStack(list, st);
+    int found = iteration(list, st);
+    revertStack(list, st);
+    return found;
+}
+
+void getGridFromStack(int n, int** grid, HeaderNode* list, stack* st)
+{
+    int i;
+    for(i = 0; i < getSize(st); i++) {
+        Node* line = getAt(st, i, list);
+        int row, col, value;
+        if(getInfoOfLine(line, &row, &col, &value)) {
+            grid[row][col] = value;
+        } else {
+            fprintf(stderr, "Impossible de récupérer les infos de la ligne\n");
+        }
+    }
 }
