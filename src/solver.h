@@ -7,6 +7,7 @@
 
 
 int solve(int n, HeaderNode* list, int** res); // Simple solving (one proc)
+int solve2(int n, HeaderNode* list, int** res); // Solver by cutting the problem (one proc)
 int iteration(HeaderNode* list, stack* st);
 
 int solveSubBranch(int n, HeaderNode* list, stack* st);

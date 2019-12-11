@@ -22,4 +22,6 @@ stack* fromRawData(void* data);
 
 stack* copyStack(stack* src, size_t capacity);
 
+void printStack(stack* st);
+
 #endif // STACK_H

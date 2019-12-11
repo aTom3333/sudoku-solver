@@ -3,6 +3,8 @@
 //
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "solver.h"
 #include "stack.h"
 #include "list.h"
@@ -23,6 +25,30 @@ int solve(int n, HeaderNode* list, int** res)
     
     freeStack(st);
     return 0;
+}
+
+int solve2(int n, HeaderNode* list, int** res)
+{
+    // Most likely less efficient than the first one but I can test the other functions
+    stack* noChoiceStack = createStack(n*n);
+    followWhileNoChoice(list, noChoiceStack);
+    getGridFromStack(n, res, list, noChoiceStack);
+    
+    int solved = 0;
+    dynarray* arr = widthExploration(n, 5, list);
+    size_t size = getSizeDynArray(arr);
+    int i;
+    for(i = 0; i < size; i++) {
+        stack* st = getAtDynArray(arr, i);
+        if(solveSubBranch(n, list, st)) {
+            getGridFromStack(n, res, list, st);
+            solved = 1;
+            break;
+        }
+    }
+    freeDynArray(arr);
+    
+    return solved;
 }
 
 int countColumn(HeaderNode* list) {

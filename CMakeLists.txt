@@ -15,8 +15,8 @@ IF(OPENMP_FOUND)
 ENDIF()
 
 add_executable(solver src/main.c src/node.h src/list.c src/list.h src/stack.c src/stack.h src/solver.c src/solver.h src/bulk_allocator.c src/bulk_allocator.h src/dynarray.c src/dynarray.h)
-#target_sources(solver PUBLIC src/node_pointer.c)
-target_sources(solver PUBLIC src/node_offset.c)
+target_sources(solver PUBLIC src/node_pointer.c)
+#target_sources(solver PUBLIC src/node_offset.c)
 target_link_libraries(solver ${MPI_C_LIBRARIES})
 target_link_libraries(solver m)
 

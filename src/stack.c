@@ -5,6 +5,7 @@
 #include "stack.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 
 struct stack {
@@ -61,6 +62,16 @@ stack* copyStack(stack* src, size_t capacity)
 {
     stack* dst = malloc(sizeof(struct stack));
     dst->data = malloc((capacity+1) * sizeof(int32_t));
-    memcpy(dst->data, src->data, src->data[0]* sizeof(int32_t));
+    memcpy(dst->data, src->data, (src->data[0]+1)* sizeof(int32_t));
     return dst;
+}
+
+void printStack(stack* st)
+{
+    printf("size: %d\n", st->data[0]);
+    int i;
+    for(i = 0; i < st->data[0]; i++) {
+        printf("\t%d", st->data[i+1]);
+    }
+    puts("");
 }
