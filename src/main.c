@@ -158,7 +158,8 @@ unsigned char **create_cover_matrix(int n) {
 
 void cnt_ligne_colonne_adj(unsigned char **p, int start, int n, int mat[n][n], int i, int j, int compteur){
     int a;
-    for(int k = start; k < start + n; k++){
+    int k;
+    for(k = start; k < start + n; k++){
         if(p[k][compteur] == 1){
             for(a = 0; a < n; a++){
                 if(mat[i][a]==(k+1)%n && mat[i][a]!=0){

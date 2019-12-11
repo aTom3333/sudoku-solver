@@ -10,7 +10,7 @@
 #include "list.h"
 
 
-HeaderNode* selectColumn(HeaderNode* list);
+HeaderNode* selectSmallestColumn(HeaderNode* list);
 int getInfoOfLine(Node* node, int* row, int* col, int* value);
 
 int solve(int n, HeaderNode* list, int** res)
@@ -33,9 +33,10 @@ int solve2(int n, HeaderNode* list, int** res)
     stack* noChoiceStack = createStack(n*n);
     followWhileNoChoice(list, noChoiceStack);
     getGridFromStack(n, res, list, noChoiceStack);
+    freeStack(noChoiceStack);
     
     int solved = 0;
-    dynarray* arr = widthExploration(n, 5, list);
+    dynarray* arr = widthExploration(n, 3, list);
     size_t size = getSizeDynArray(arr);
     int i;
     for(i = 0; i < size; i++) {
@@ -103,7 +104,7 @@ int iteration(HeaderNode* list, stack* st)
         return 1;
     }
     int found = 0;
-    HeaderNode* column = selectColumn(list);
+    HeaderNode* column = selectSmallestColumn(list);
     //hideColumnAndLines(column);
     Node* node = getDown((Node*) column);
     while(node != (Node*) column && !found) {
@@ -121,7 +122,7 @@ int iteration(HeaderNode* list, stack* st)
     return found;
 }
 
-HeaderNode* selectColumn(HeaderNode* list)
+HeaderNode* selectSmallestColumn(HeaderNode* list)
 {
     HeaderNode* current = (HeaderNode*) getRight((Node*) list);
     HeaderNode* best = current;
@@ -130,7 +131,20 @@ HeaderNode* selectColumn(HeaderNode* list)
             best = current;
         current = (HeaderNode*) getRight((Node*) current);
     }
-    
+
+    return best;
+}
+
+HeaderNode* selectBiggestColumn(HeaderNode* list)
+{
+    HeaderNode* current = (HeaderNode*) getRight((Node*) list);
+    HeaderNode* best = current;
+    while(current != list) {
+        if(getData(current)->numInCol > getData(best)->numInCol)
+            best = current;
+        current = (HeaderNode*) getRight((Node*) current);
+    }
+
     return best;
 }
 
@@ -188,12 +202,12 @@ void revertStack(HeaderNode* list, stack* st)
 
 void followWhileNoChoice(HeaderNode* list, stack* st)
 {
-    HeaderNode* column = selectColumn(list);
+    HeaderNode* column = selectSmallestColumn(list);
     while(getData(column)->numInCol == 1) {
         Node* node = getDown((Node*) column);
         push(st, node, list);
         chooseLine(node);
-        column = selectColumn(list);
+        column = selectSmallestColumn(list);
     } 
 }
 
@@ -204,7 +218,7 @@ void widthExplorationIteration(int n, int depth, HeaderNode* list, dynarray* arr
         append(arr, copyStack(st, n*n));
         return;
     }
-    HeaderNode* column = selectColumn(list);
+    HeaderNode* column = selectBiggestColumn(list);
     Node* node = getDown((Node*) column);
     while(node != (Node*) column) {
         push(st, node, list);
@@ -216,7 +230,7 @@ void widthExplorationIteration(int n, int depth, HeaderNode* list, dynarray* arr
         }
         else
         {
-            append(arr, copyStack(st, n*n));    
+            append(arr, copyStack(st, n*n));
         }
         pop(st, list);
 
@@ -224,10 +238,13 @@ void widthExplorationIteration(int n, int depth, HeaderNode* list, dynarray* arr
     }
 }
 
+void freeStackFn(void* st) {
+    freeStack((stack*)st);
+}
 
 dynarray* widthExploration(int n, int depth, HeaderNode* list)
 {
-    dynarray* arr = createDynArray(10, freeStack);
+    dynarray* arr = createDynArray(10, freeStackFn);
     stack* st = createStack(n*n);
     widthExplorationIteration(n, depth, list, arr, st);
     freeStack(st);

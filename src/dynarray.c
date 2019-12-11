@@ -21,6 +21,7 @@ dynarray* createDynArray(size_t capacity, freeFn freeFunction)
     arr->capacity = capacity;
     arr->size = 0;
     arr->freeFunc = freeFunction;
+    return arr;
 }
 
 void freeDynArray(dynarray* arr)
@@ -46,7 +47,8 @@ inline void* getAtDynArray(dynarray* arr, size_t index)
 void append(dynarray* arr, void* elem)
 {
     if(arr->size == arr->capacity) {
-        arr->data = realloc(arr->data, arr->capacity * 1.5);
+        arr->capacity *= 1.5;
+        arr->data = realloc(arr->data, arr->capacity * sizeof(void*));
     }
     arr->data[arr->size++] = elem;
 }
