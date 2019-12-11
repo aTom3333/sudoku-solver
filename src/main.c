@@ -219,7 +219,7 @@ void ligne_colonnes(unsigned char ** p, num n, num mat[n][n]){
                     p[start+n-1][compteur] = 1;
                 }
             }
-            if(mat[i][j]==0){  //Contraintes dûes aux lignes et aux colonnes
+            else{  //Contraintes dûes aux lignes et aux colonnes
                 int start = compteur*n;
                 cnt_ligne_colonne_adj(p, start, n, mat, i, j, compteur);
             }
