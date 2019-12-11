@@ -151,7 +151,7 @@ HeaderNode* createListFromMatrix(unsigned char** mat, unsigned int n, memory_chu
 }
 
 void hideColumnAndLines(HeaderNode* header)
-{
+{    
     // Hide header
     setLeft(getRight((Node*) header), getLeft((Node*) header));
     setRight(getLeft((Node*) header), getRight((Node*) header));
@@ -391,6 +391,9 @@ HeaderNode* createListFromSudoku(int** sudoku, unsigned int n_sqrt, struct memor
                                 }
                                 nodeToRemove = getDown(nodeToRemove);
                             }
+                            setUp((Node*) header, (Node*) header);
+                            setDown((Node*) header, (Node*) header);
+                            getData(header)->numInCol = 0;
                             
                             Node* node = createNode(mc);
                             setHeader(node, header);
@@ -432,7 +435,7 @@ HeaderNode* createListFromSudoku(int** sudoku, unsigned int n_sqrt, struct memor
                             int i;
                             int needLine = 1;
                             for(i = 0; i < 4; i++) {
-                                if(getData(headers[i])->isKnown) {
+                                if(getData(headers[usedHeaders[i]])->isKnown) {
                                     needLine = 0;
                                     break;
                                 }

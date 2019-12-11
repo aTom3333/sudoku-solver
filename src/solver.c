@@ -82,7 +82,7 @@ void checkList(HeaderNode* list) {
 
 int iteration(int k, HeaderNode* list, stack* st)
 {
-    checkList(list);
+    //checkList(list);
     if(getRight((Node*) list) == (Node*) list) {
         // No more column
         return 1;
