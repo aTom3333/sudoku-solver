@@ -12,8 +12,9 @@ enum ConstraintType {
 };
 typedef struct HeaderData { // TODO Pack
     int numInCol;
-    int major;
+    int major; // TODO Change type
     int minor;
+    unsigned char isKnown;
     enum ConstraintType constraintType;
 } HeaderData;
 

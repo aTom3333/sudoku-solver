@@ -9,7 +9,7 @@
 stack createStack(size_t capacity)
 {
     stack result = {
-        .data = malloc(capacity * sizeof(void*)),
+        .data = malloc(capacity * sizeof(int32_t)),
         .size = 0
     };
     return result;
@@ -20,12 +20,12 @@ void freeStack(stack* st)
     free(st->data);
 }
 
-void push(stack* st, void* value)
+void push(stack* st, Node* node, HeaderNode* list)
 {
-    st->data[st->size++] = value;
+    st->data[st->size++] = (void*)node - (void*)list;
 }
 
-void* pop(stack* st)
+Node* pop(stack* st, HeaderNode* list)
 {
-    return st->data[--st->size];
+    return st->data[--st->size] + (void*)list;
 }

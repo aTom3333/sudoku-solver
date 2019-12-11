@@ -19,7 +19,7 @@ int solve(int n, HeaderNode* list, int** res)
     if(iteration(0, list, &st)) {
         int i;
         for(i = 0; i < st.size; i++) {
-            Node* line = st.data[i];
+            Node* line = st.data[i] + (void*)list;
             int row, col, value;
             if(getInfoOfLine(line, &row, &col, &value)) {
                 res[row][col] = value;
@@ -92,13 +92,13 @@ int iteration(int k, HeaderNode* list, stack* st)
     //hideColumnAndLines(column);
     Node* node = getDown((Node*) column);
     while(node != (Node*) column && !found) {
-        push(st, node);
+        push(st, node, list);
         chooseLine(node);
         found = iteration(k+1, list, st);
         unchooseLine(node);
         
         if(!found)
-            pop(st);
+            pop(st, list);
         
         node = getDown(node);
     }
