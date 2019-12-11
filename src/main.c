@@ -174,6 +174,35 @@ void cnt_ligne_colonne_adj(unsigned char **p, int start, int n, int mat[n][n], i
     }
 }
 
+void cnt_ligne_colonne_adj2(unsigned char **p, int colonne, int n, int mat[n][n], int i, int j, int compteur){
+    int a, k;
+    int start = compteur*n;
+    int c = colonne;
+    for(k = start; k < start + n; k++){
+        if(p[k][c] == 1){
+            for(a = 0; a < n; a++){
+                if(mat[i][a]==(k+1)%n && mat[i][a]!=0){
+                    p[k][c] = 0;
+                    break;
+                }   
+                if(mat[i][a]==n){
+                    p[k][colonne+n-1] = 0;
+                }                       
+            }   
+            for(a = 0; a < n; a++){
+                if(mat[a][j]==(k+1)%n && mat[a][j]!=0){
+                    p[k][c] = 0;
+                    break;
+                }
+                if(mat[a][j]==n){
+                    p[k][colonne+n-1] = 0;
+                }
+            }
+        }
+        c++;
+    }
+}
+
 void ligne_colonnes(unsigned char ** p, num n, num mat[n][n]){
     int compteur=0;
     int i, j, k;
@@ -218,37 +247,41 @@ void ligne_nombre(unsigned char ** p, num n, num mat[n][n]){
                     p[start+n-1][c-1] = 1;
                 }
             }
-            if(mat[i][j]==0){               
-                int a;
-                int start = compteur*n;
-                int c = colonne;
-                for(int k = start; k < start + n; k++){
-                    if(p[k][c] == 1){
-                        for(a = 0; a < n; a++){
-                            if(mat[i][a]==(k+1)%n && mat[i][a]!=0){
-                                p[k][c] = 0;
-                                break;
-                            }   
-                            if(mat[i][a]==n){
-                                p[k][colonne+n-1] = 0;
-                            }                       
-                        }   
-                        for(a = 0; a < n; a++){
-                            if(mat[a][j]==(k+1)%n && mat[a][j]!=0){
-                                p[k][c] = 0;
-                                break;
-                            }
-                            if(mat[a][j]==n){
-                                p[k][colonne+n-1] = 0;
-                            }
-                        }
-                    }
-                    c++;
-                }
+            else{               
+                cnt_ligne_colonne_adj2(p, colonne, n, mat, i, j, compteur);
             }
             compteur++;
         }
         colonne+=n;
+    }
+}
+
+void colonne_nombre(unsigned char ** p, num n, num mat[n][n]){
+    int i, j, k;
+    int compteur = 0;
+    int colonne = n*n*2;
+    for(i = 0; i < n; i++){
+        for(j = 0; j < n; j++){
+            if(mat[i][j]!=0){
+                int start = compteur * n;
+                int c = colonne;
+                for(k = start; k < start+n; k++){
+                    if(p[k][c]==1 && (k+1)%n!=mat[i][j]){
+                        p[k][c]=0;
+                    }
+                    c++;
+                }
+                if(mat[i][j]==n){
+                    p[start+n-1][c-1] = 1;
+                }
+            }
+            else{
+                cnt_ligne_colonne_adj2(p, colonne, n, mat, i, j, compteur);
+            }
+            compteur++;
+            colonne+=n;
+        }
+        colonne=n*n*2;
     }
 }
 
@@ -261,7 +294,8 @@ void fillInCover(unsigned char ** p, num n, num mat[n][n]){
     //ligne-Nombre
     ligne_nombre(p,n,mat);
 
-    //colonne-Nombre
+    //Colonne-Nombre
+    colonne_nombre(p,n,mat);
 
     
 
