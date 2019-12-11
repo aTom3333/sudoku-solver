@@ -359,7 +359,7 @@ int main() {
     //free(p);
     //HeaderNode* list = createDebugList();
     
-    solve(n, list, sudoku);
+    solve2(n, list, sudoku);
     printSudoku(n, sudoku);
     
     /*for(i = 1; i <= 9; i++) {

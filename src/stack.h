@@ -5,15 +5,23 @@
 #include <stdint.h>
 #include "node.h"
 
-typedef struct stack {
-    int32_t* data;
-    size_t size;
-} stack;
+struct stack;
+typedef struct stack stack;
 
-stack createStack(size_t capacity);
+stack* createStack(size_t capacity);
 void freeStack(stack* st);
 
 void push(stack* st, Node* node, HeaderNode* list);
 Node* pop(stack* st, HeaderNode* list);
+
+inline size_t getSize(stack* st);
+inline Node* getAt(stack* st, size_t index, HeaderNode* list);
+
+void* getRawData(stack* st);
+stack* fromRawData(void* data);
+
+stack* copyStack(stack* src, size_t capacity);
+
+void printStack(stack* st);
 
 #endif // STACK_H
