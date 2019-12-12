@@ -378,6 +378,7 @@ int main(int argc, char** argv) {
     // Our linked list data structure is in one block and linked using offset so we can bit copy it
     
     MPI_Request someoneFound;
+    
     num* receivingSudoku = malloc(n*n* sizeof(num));
     MPI_Irecv(receivingSudoku, n*n, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &someoneFound);
     
@@ -386,7 +387,7 @@ int main(int argc, char** argv) {
     if(id == 0)
     {
         deadSlaves = malloc((p - 1) * sizeof(MPI_Request));
-        slaveFound = malloc((p - 1 * sizeof(int)));
+        slaveFound = malloc((p - 1) * sizeof(int));
         for(i = 1; i < p; i++) {
             MPI_Irecv(NULL, 0, MPI_INT, i, 1, MPI_COMM_WORLD, &deadSlaves[i-1]);
             slaveFound[i-1] = 0;
@@ -398,10 +399,13 @@ int main(int argc, char** argv) {
     if(ret == 2) {
         // Someone else found the solution
         found = 1;
+        printf("I'm %d and I'm here\n", id);
         if(id == 0) {
+            printf("Slave found the solution\n");
             // Tell everyone to stop
             for(i = 1; i < p; i++) {
-                MPI_Isend(NULL, 0, MPI_INT, i, 0, MPI_COMM_WORLD, NULL);
+                MPI_Request req;
+                MPI_Isend(NULL, 0, MPI_INT, i, 0, MPI_COMM_WORLD, &req);
             }
             // Keep the data
             memcpy(sudoku_data, receivingSudoku, n*n*sizeof(num));
@@ -412,11 +416,15 @@ int main(int argc, char** argv) {
         found = 1;
         if(id != 0) {
             // Let's tell master
-            MPI_Isend(sudoku_data, n*n, MPI_INT, 0, 0, MPI_COMM_WORLD, NULL);
+            //MPI_Request req;
+            printf("I'm slave %d and I found the solution\n", id);
+            MPI_Send(sudoku_data, n*n, MPI_INT, 0, 0, MPI_COMM_WORLD);
         } else {
+            printf("Master found the solution\n");
             // Tell everyone to stop
+            MPI_Request req;
             for(i = 1; i < p; i++) {
-                MPI_Isend(NULL, 0, MPI_INT, i, 0, MPI_COMM_WORLD, NULL);
+                MPI_Isend(NULL, 0, MPI_INT, i, 0, MPI_COMM_WORLD, &req);
             }
         }
     }
@@ -429,7 +437,8 @@ int main(int argc, char** argv) {
             }
             // Test if someone found
             MPI_Test(&someoneFound, &found, NULL);
-            
+            if(found)
+                memcpy(sudoku_data, receivingSudoku, n*n* sizeof(num));
         }
     }
     
@@ -438,22 +447,23 @@ int main(int argc, char** argv) {
     {
         if(found)
         {
-            printf("Solution trouvée\n");
+            printf("Solution trouvée (%d)\n", found);
             printSudoku(n, sudoku);
         }
         else {
             printf("Pas de solution trouvée\n");
         }
         free_memory_chunk(&mc); // Free every node used during the algorithm
-        for(i = 1; i < p; i++) {
-            MPI_Request_free(&deadSlaves[i-1]);
-        }
+        //for(i = 1; i < p; i++) {
+        //    MPI_Request_free(&deadSlaves[i-1]);
+        //}
     } else {
         free(listBuffer);
-        MPI_Isend(NULL, 0, MPI_INT, 0, 1, MPI_COMM_WORLD, NULL); // Tell master we are dead
+        MPI_Request req;
+        MPI_Isend(NULL, 0, MPI_INT, 0, 1, MPI_COMM_WORLD, &req); // Tell master we are dead
     }
 
-    MPI_Request_free(&someoneFound);
+    //MPI_Request_free(&someoneFound);
     free(receivingSudoku);
     free(sudoku);
     free(sudoku_data);
