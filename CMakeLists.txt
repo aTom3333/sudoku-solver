@@ -21,3 +21,7 @@ target_link_libraries(solver ${MPI_C_LIBRARIES})
 target_link_libraries(solver m)
 
 add_executable(generator src/sudoku_generator.c)
+
+add_executable(solver-onefile src/sudoku.c)
+target_link_libraries(solver-onefile ${MPI_C_LIBRARIES})
+target_link_libraries(solver-onefile m)
