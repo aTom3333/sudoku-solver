@@ -122,6 +122,43 @@ int iteration(HeaderNode* list, stack* st)
     return found;
 }
 
+
+
+
+int iterationMPI(HeaderNode* list, stack* st, int* counter, int p, int id, MPI_Request* someoneFound)
+{
+    if((*counter)++ > 10000) {
+        int someoneElseFound = 0;
+        MPI_Test(someoneFound, &someoneElseFound, MPI_STATUS_IGNORE);
+        if(someoneElseFound)
+            return 2;
+        *counter = 0;
+    }
+    //checkList(list);
+    if(getRight((Node*) list) == (Node*) list) {
+        // No more column
+        return 1;
+    }
+    int found = 0;
+    HeaderNode* column = selectSmallestColumn(list);
+    //hideColumnAndLines(column);
+    Node* node = getDown((Node*) column);
+    while(node != (Node*) column && !found) {
+        push(st, node, list);
+        chooseLine(node);
+        found = iterationMPI(list, st, counter, p, id, someoneFound);
+        unchooseLine(node);
+
+        if(!found)
+            pop(st, list);
+
+        node = getDown(node);
+    }
+    //showColumnAndLines(column);
+    return found;
+}
+
+
 HeaderNode* selectSmallestColumn(HeaderNode* list)
 {
     HeaderNode* current = (HeaderNode*) getRight((Node*) list);
@@ -259,6 +296,15 @@ int solveSubBranch(int n, HeaderNode* list, stack* st)
     return found;
 }
 
+int solveSubBranchMPI(int n, HeaderNode* list, stack* st, int p, int id, MPI_Request* someoneFound)
+{
+    followStack(list, st);
+    int counter = 0;
+    int found = iterationMPI(list, st, &counter, p, id, someoneFound);
+    revertStack(list, st);
+    return found;
+}
+
 void getGridFromStack(int n, int** grid, HeaderNode* list, stack* st)
 {
     int i;
@@ -271,4 +317,31 @@ void getGridFromStack(int n, int** grid, HeaderNode* list, stack* st)
             fprintf(stderr, "Impossible de récupérer les infos de la ligne\n");
         }
     }
+}
+
+int solveMPI(int n, HeaderNode* list, int** res, int p, int id, MPI_Request* someoneFound)
+{
+    stack* noChoiceStack = createStack(n*n);
+    followWhileNoChoice(list, noChoiceStack);
+    getGridFromStack(n, res, list, noChoiceStack);
+    freeStack(noChoiceStack);
+
+    int solved = 0;
+    dynarray* arr = widthExploration(n, 3, list);
+    size_t size = getSizeDynArray(arr);
+    int i;
+    int start = (id / p) * size;
+    int end = ((id+1) / p) * size;
+    for(i = start; i < end; i++) {
+        stack* st = getAtDynArray(arr, i);
+        solved = solveSubBranchMPI(n, list, st, p, id, someoneFound);
+        
+        if(solved == 1) {
+            getGridFromStack(n, res, list, st);
+            break;
+        }
+    }
+    freeDynArray(arr);
+
+    return solved;
 }

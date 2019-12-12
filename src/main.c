@@ -1,6 +1,7 @@
-#include <math.h>
+#include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "list.h"
 #include "solver.h"
 #include "bulk_allocator.h"
@@ -328,63 +329,135 @@ void printSudoku(int n, num** s) {
     }
 }
 
-int main() {
+int main(int argc, char** argv) {
     //int n = 25;
     //num n;    	
+    MPI_Init(&argc, &argv);
+    int id, p;
+    MPI_Comm_rank (MPI_COMM_WORLD, &id);
+    MPI_Comm_size (MPI_COMM_WORLD, &p);
 
-    int n_sqrt = takeSize();
-    if(n_sqrt > 100) {
-        fprintf(stderr, "sûrement pas volontaire\n");
-        exit(1);
+    num* sudoku_data = NULL, **sudoku = NULL;
+    HeaderNode* list = NULL;
+    int n, n_sqrt;
+    memory_chunk mc;
+    
+    if(id == 0)
+    {
+        n_sqrt = takeSize();
+        if(n_sqrt > 100)
+        {
+            fprintf(stderr, "sûrement pas volontaire\n");
+            exit(1);
+        }
     }
-    int n = n_sqrt * n_sqrt;
-    num* sudoku_data = malloc(n*n* sizeof(num));
-    num** sudoku = malloc(n*sizeof(num*));
+    MPI_Bcast(&n_sqrt, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    n = n_sqrt * n_sqrt;
+    
+    void* listBuffer;
+    size_t listBufferSize = sizeOfHeaderNode() + n*n*4*sizeOfHeaderNode() + n*n*n*4*sizeOfNode();
+    sudoku_data = malloc(n * n * sizeof(num));
+    sudoku = malloc(n * sizeof(num*));
     int i;
     for(i = 0; i < n; i++)
-        sudoku[i] = sudoku_data + i*n;
-    getSudoku(n, sudoku);
-
-
-    //unsigned char** p = create_cover_matrix(n);
-    //print_cover_matrix(p, n);
+        sudoku[i] = sudoku_data + i * n;
     
-    //puts("");
-    printSudoku(n, sudoku);
+    if(id == 0) {
+        getSudoku(n, sudoku);
 
-    //puts("");
-    memory_chunk mc; // Only one memory_chunk for now
-    //HeaderNode* list = createListFromMatrix(p, n, &mc);
-    HeaderNode* list = createListFromSudoku(sudoku, n_sqrt, &mc);
-    //free(p[0]);
-    //free(p);
-    //HeaderNode* list = createDebugList();
-    
-    solve2(n, list, sudoku);
-    printSudoku(n, sudoku);
-    
-    /*for(i = 1; i <= 9; i++) {
-        for(j = 1; j <= 9; j++) {
-            int k = sudoku[i - 1][j - 1];
-            if (k != 0){ // zero out in the constraint board
-                for(int num = 1; num <= 9; num++) {
-                    if (num != k) {
-                        //printf("p[%d] = 0\n", (i - 1) * 3 * 3 + (j - 1) * 9 + (k - 1));
+        printSudoku(n, sudoku);
 
-                        for (int col = 0; col < (n * n * 4); col++)
-                            p[(i - 1) * 3 * 3 + (j - 1) * 9 + (k - 1)][col] = 0;
-                        //Arrays.fill(R[getIdx(i, j, num)], 0);
-                    }
-                }
+        list = createListFromSudoku(sudoku, n_sqrt, &mc);
+        listBuffer = list;
+    } else {
+        listBuffer = malloc(listBufferSize);
+        list = listBuffer;
+    }
+    
+    MPI_Bcast(listBuffer, listBufferSize, MPI_UNSIGNED_CHAR, 0, MPI_COMM_WORLD);
+    // Our linked list data structure is in one block and linked using offset so we can bit copy it
+    
+    MPI_Request someoneFound;
+    num* receivingSudoku = malloc(n*n* sizeof(num));
+    MPI_Irecv(receivingSudoku, n*n, MPI_INT, MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &someoneFound);
+    
+    MPI_Request* deadSlaves;
+    int* slaveFound;
+    if(id == 0)
+    {
+        deadSlaves = malloc((p - 1) * sizeof(MPI_Request));
+        slaveFound = malloc((p - 1 * sizeof(int)));
+        for(i = 1; i < p; i++) {
+            MPI_Irecv(NULL, 0, MPI_INT, i, 1, MPI_COMM_WORLD, &deadSlaves[i-1]);
+            slaveFound[i-1] = 0;
+        }
+    }
+
+    int found = 0;
+    int ret = solveMPI(n, list, sudoku, p, id, &someoneFound);
+    if(ret == 2) {
+        // Someone else found the solution
+        found = 1;
+        if(id == 0) {
+            // Tell everyone to stop
+            for(i = 1; i < p; i++) {
+                MPI_Isend(NULL, 0, MPI_INT, i, 0, MPI_COMM_WORLD, NULL);
+            }
+            // Keep the data
+            memcpy(sudoku_data, receivingSudoku, n*n*sizeof(num));
+        }
+    }
+    else if(ret == 1) {
+        // WE found it
+        found = 1;
+        if(id != 0) {
+            // Let's tell master
+            MPI_Isend(sudoku_data, n*n, MPI_INT, 0, 0, MPI_COMM_WORLD, NULL);
+        } else {
+            // Tell everyone to stop
+            for(i = 1; i < p; i++) {
+                MPI_Isend(NULL, 0, MPI_INT, i, 0, MPI_COMM_WORLD, NULL);
             }
         }
     }
-    print_cover_matrix(p, n);*/
+    else if(ret == 0) {
+        // Nobody found it before we finished
+        if(id == 0) {
+            // Wait for every slave
+            for(i = 1; i < p; i++) {
+                MPI_Wait(&deadSlaves[i-1], NULL);
+            }
+            // Test if someone found
+            MPI_Test(&someoneFound, &found, NULL);
+            
+        }
+    }
     
-    // TODO Free
-    free_memory_chunk(&mc); // Free every node used during the algorithm
+    
+    if(id == 0)
+    {
+        if(found)
+        {
+            printf("Solution trouvée\n");
+            printSudoku(n, sudoku);
+        }
+        else {
+            printf("Pas de solution trouvée\n");
+        }
+        free_memory_chunk(&mc); // Free every node used during the algorithm
+        for(i = 1; i < p; i++) {
+            MPI_Request_free(&deadSlaves[i-1]);
+        }
+    } else {
+        free(listBuffer);
+        MPI_Isend(NULL, 0, MPI_INT, 0, 1, MPI_COMM_WORLD, NULL); // Tell master we are dead
+    }
+
+    MPI_Request_free(&someoneFound);
+    free(receivingSudoku);
     free(sudoku);
     free(sudoku_data);
-
+    MPI_Finalize();
+    
     return 0;
 }
