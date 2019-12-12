@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <omp.h>
 #include "solver.h"
 #include "stack.h"
 #include "list.h"
@@ -35,17 +36,35 @@ int solve2(int n, HeaderNode* list, int** res)
     getGridFromStack(n, res, list, noChoiceStack);
     freeStack(noChoiceStack);
     
+    // Duplicate data structure for openMP
+    
+    int proc = omp_get_num_procs();
+    omp_set_num_threads(proc);
+    HeaderNode** lists = malloc(proc * sizeof(HeaderNode*));
+    int i;
+    for(i = 0; i < proc; i++) {
+        lists[i] = malloc(sizeOfHeaderNode() + n*n*4*sizeOfHeaderNode() + n*n*n*4*sizeOfNode());
+        memcpy(lists[i], list, sizeOfHeaderNode() + n*n*4*sizeOfHeaderNode() + n*n*n*4*sizeOfNode());
+    }
+
     int solved = 0;
+    volatile int flag = 0;
     dynarray* arr = widthExploration(n, 3, list);
     size_t size = getSizeDynArray(arr);
-    int i;
+    #pragma omp parallel for shared(solved, flag)
     for(i = 0; i < size; i++) {
+        if(flag) continue; // Avoid using break for openMP
+        int localSolved = 0;
         stack* st = getAtDynArray(arr, i);
-        if(solveSubBranch(n, list, st)) {
-            getGridFromStack(n, res, list, st);
+        int threadId = omp_get_thread_num();
+        HeaderNode* myList = lists[threadId];
+        localSolved = solveSubBranch(n, myList, st);
+        if(localSolved == 1) {
+            getGridFromStack(n, res, myList, st);
             solved = 1;
-            break;
         }
+        if(localSolved)
+            flag = 1;
     }
     freeDynArray(arr);
     
@@ -129,6 +148,7 @@ int iterationMPI(HeaderNode* list, stack* st, int* counter, int p, int id, MPI_R
 {
     if((*counter)++ > 10000) {
         int someoneElseFound = 0;
+        #pragma omp critical
         MPI_Test(someoneFound, &someoneElseFound, MPI_STATUS_IGNORE);
         if(someoneElseFound)
             return 2;
